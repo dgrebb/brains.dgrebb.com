@@ -12,3 +12,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 .DS_Store
+
+# rendered iam policies embed account identifiers
+iam/*.json
