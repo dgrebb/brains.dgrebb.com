@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Project-aware OpenTofu wrapper. Loads secrets from pass, then execs tofu
+# with the remaining arguments. Always runs from the repository root.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+# shellcheck source=env.sh
+source "${ROOT}/scripts/env.sh"
+
+if ! command -v tofu >/dev/null 2>&1; then
+  echo "error: opentofu (tofu) is not on PATH" >&2
+  exit 127
+fi
+
+exec tofu "$@"

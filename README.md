@@ -39,33 +39,42 @@ option, `PriceClass_100` (North America and Europe edges only).
 
 ## Configuration
 
-No account identifiers are committed to this repo. Credentials and the
-certificate id come from [`pass`](https://www.passwordstore.org/) at runtime:
+No account identifiers are committed to this repo. `make` loads secrets from
+[`pass`](https://www.passwordstore.org/) through `scripts/env.sh` before every
+OpenTofu invocation:
 
-```sh
-export AWS_ACCESS_KEY_ID="$(pass dg/aws/id)"
-export AWS_SECRET_ACCESS_KEY="$(pass dg/aws/secret)"
-export AWS_REGION=us-east-1
+| Variable | Source | Notes |
+| --- | --- | --- |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `dg/aws/id`, `dg/aws/secret` | Only if no existing AWS credential chain is set |
+| `AWS_REGION` | hardcoded `us-east-1` | CloudFront requires the viewer cert in this region |
+| `TF_VAR_acm_certificate_id` | `dg/aws/brains/cert-id` | Bare UUID; pins the exact certificate |
 
-# Pins the exact certificate. Bare UUID, not a full ARN.
-export TF_VAR_acm_certificate_id="$(pass dg/aws/brains/cert-id)"
-```
+Existing `AWS_*` / `TF_VAR_*` values win — pass is only consulted for unset
+variables. Credentials go to the standard AWS env chain, not `TF_VAR_`, so the
+provider uses its default credential resolution. The account id is never
+stored; it is read at apply time via `aws_caller_identity`.
 
-`acm_certificate_id` is optional. Left unset, the config falls back to looking
-up the most recent ISSUED certificate whose primary domain is `dgrebb.com`.
-That works today, but the account holds more than one such certificate, so the
-selection could change if another is issued later. Pinning the id avoids that.
+`acm_certificate_id` is optional. When the pass entry is present it pins the
+exact certificate, which is the intended path. When it is missing, `make`
+prints a warning and continues, and the config falls back to the most recent
+ISSUED certificate whose primary domain is `dgrebb.com` — so a fresh clone can
+still plan. Prefer the pin: the account holds more than one such certificate,
+and the fallback's choice could change if another is issued later.
 
-The account id is never stored anywhere; it is read at apply time via
-`aws_caller_identity` to assemble the certificate ARN.
+Missing credential entries, by contrast, are fatal.
 
 ## Usage
 
 ```sh
-tofu init
-tofu plan -out=tfplan
-tofu apply tfplan
+make init
+make plan    # writes tfplan; exit code 2 (changes present) is treated as success
+make apply   # applies tfplan, then deletes it
+make check   # fmt -check + validate
+make help    # list all targets
 ```
+
+Destroy requires typing `brains.dgrebb.com` to confirm. For one-off tofu
+commands with the same env injection: `./scripts/tofu <args>`.
 
 Then set the custom domain to `brains.dgrebb.com` in Obsidian Publish and wait
 for the distribution to finish deploying. Until Obsidian knows the domain, the
