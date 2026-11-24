@@ -48,6 +48,8 @@ OpenTofu invocation:
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `dg/aws/brains/id`, `dg/aws/brains/secret` | Keys for the `brains-tofu` user. Only if no existing AWS credential chain is set |
 | `AWS_REGION` | hardcoded `us-east-1` | CloudFront requires the viewer cert in this region |
 | `TF_VAR_acm_certificate_id` | `dg/aws/brains/cert-id` | Bare UUID; pins the exact certificate |
+| `BRAINS_DISTRIBUTION_ID` | `dg/aws/brains/distribution-id` | Only for rendering the IAM policy |
+| `BRAINS_ZONE_ID` | `dg/aws/brains/zone-id` | Only for rendering the IAM policy |
 
 Existing `AWS_*` / `TF_VAR_*` values win — pass is only consulted for unset
 variables. Credentials go to the standard AWS env chain, not `TF_VAR_`, so the
@@ -74,8 +76,11 @@ IAM permissions are additive, so the policy only constrains anything when it
 is the *sole* policy on the principal. Do not attach it alongside broad
 policies such as `IAMFullAccess` and expect it to restrict them.
 
-`make iam-policy` re-renders the policy from the template with this account's
-identifiers. Publish changes as a new version:
+`make iam-policy` re-renders the policy from the template, taking the account
+id from `sts:GetCallerIdentity` and the distribution and zone ids from pass.
+Both ids fall back to discovery if their entry is missing, so this works before
+the entries exist — but the distribution id fallback reads local state, which a
+fresh clone will not have. Publish changes as a new version:
 
 ```sh
 make iam-policy
