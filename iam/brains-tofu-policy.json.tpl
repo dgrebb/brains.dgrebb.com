@@ -38,7 +38,9 @@
       "Effect": "Allow",
       "Action": [
         "acm:ListCertificates",
-        "acm:DescribeCertificate"
+        "acm:DescribeCertificate",
+        "acm:GetCertificate",
+        "acm:ListTagsForCertificate"
       ],
       "Resource": "*"
     },

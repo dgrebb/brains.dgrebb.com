@@ -12,8 +12,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   exit 1
 fi
 
-PASS_AWS_ACCESS_KEY_ID="${PASS_AWS_ACCESS_KEY_ID:-dg/aws/id}"
-PASS_AWS_SECRET_ACCESS_KEY="${PASS_AWS_SECRET_ACCESS_KEY:-dg/aws/secret}"
+# Project-scoped credentials: the brains-tofu user carries only the
+# brains-tofu policy (iam/brains-tofu-policy.json.tpl), not account-wide access.
+PASS_AWS_ACCESS_KEY_ID="${PASS_AWS_ACCESS_KEY_ID:-dg/aws/brains/id}"
+PASS_AWS_SECRET_ACCESS_KEY="${PASS_AWS_SECRET_ACCESS_KEY:-dg/aws/brains/secret}"
 PASS_ACM_CERTIFICATE_ID="${PASS_ACM_CERTIFICATE_ID:-dg/aws/brains/cert-id}"
 
 # CloudFront viewer certificates must live in us-east-1. Do not inherit the

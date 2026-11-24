@@ -45,7 +45,7 @@ OpenTofu invocation:
 
 | Variable | Source | Notes |
 | --- | --- | --- |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `dg/aws/id`, `dg/aws/secret` | Only if no existing AWS credential chain is set |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `dg/aws/brains/id`, `dg/aws/brains/secret` | Keys for the `brains-tofu` user. Only if no existing AWS credential chain is set |
 | `AWS_REGION` | hardcoded `us-east-1` | CloudFront requires the viewer cert in this region |
 | `TF_VAR_acm_certificate_id` | `dg/aws/brains/cert-id` | Bare UUID; pins the exact certificate |
 
@@ -62,6 +62,30 @@ still plan. Prefer the pin: the account holds more than one such certificate,
 and the fallback's choice could change if another is issued later.
 
 Missing credential entries, by contrast, are fatal.
+
+## Permissions
+
+`make` runs as the dedicated `brains-tofu` IAM user, which carries only the
+`brains-tofu` managed policy — no account-wide access. It can manage this
+distribution and records in the `dgrebb.com` zone, and nothing else. Reading
+any other distribution, listing S3, or reading IAM is denied.
+
+IAM permissions are additive, so the policy only constrains anything when it
+is the *sole* policy on the principal. Do not attach it alongside broad
+policies such as `IAMFullAccess` and expect it to restrict them.
+
+`make iam-policy` re-renders the policy from the template with this account's
+identifiers. Publish changes as a new version:
+
+```sh
+make iam-policy
+aws iam create-policy-version \
+  --policy-arn arn:aws:iam::<account-id>:policy/brains-tofu \
+  --policy-document file://iam/brains-tofu-policy.json --set-as-default
+```
+
+The rendered JSON is gitignored because it embeds the account, zone, and
+distribution ids. Only the template is committed.
 
 ## Usage
 
