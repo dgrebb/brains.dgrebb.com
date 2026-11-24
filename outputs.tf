@@ -14,6 +14,7 @@ output "cloudfront_domain_name" {
 }
 
 output "acm_certificate_arn" {
-  value       = data.aws_acm_certificate.site.arn
+  value       = local.acm_certificate_arn
   description = "Certificate attached to the distribution."
+  sensitive   = true # embeds the account id
 }

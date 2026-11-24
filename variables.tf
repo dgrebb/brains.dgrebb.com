@@ -22,10 +22,25 @@ variable "obsidian_domain_name" {
   description = "Obsidian Publish origin hostname."
 }
 
+variable "acm_certificate_id" {
+  type        = string
+  default     = null
+  description = <<-EOT
+    UUID of the us-east-1 ACM certificate to attach, pinning the exact certificate.
+    The account id is read at runtime, so only the UUID is needed here.
+    Leave null to fall back to a lookup by acm_certificate_domain.
+  EOT
+
+  validation {
+    condition     = var.acm_certificate_id == null || can(regex("^[0-9a-f-]{36}$", var.acm_certificate_id))
+    error_message = "acm_certificate_id must be a bare certificate UUID, not a full ARN."
+  }
+}
+
 variable "acm_certificate_domain" {
   type        = string
   default     = "dgrebb.com"
-  description = "Primary domain of the existing us-east-1 ACM certificate to reuse. Its SANs must cover var.fqdn."
+  description = "Primary domain of the certificate to look up when acm_certificate_id is null. Its SANs must cover var.fqdn."
 }
 
 variable "price_class" {
